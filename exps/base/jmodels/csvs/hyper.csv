@@ -1,0 +1,16 @@
+project_id,output_dir,wgt-bg,wgt-fg,steps,gamma,sampling
+flame,{root}/exps/base/exp-kNbljXUr-5,2,e1,10000,2.0,percentile
+flame,{root}/exps/base/exp-z4y0pbH8-5,2,e1,40000,2.0,percentile
+flame,{root}/exps/base/exp-7_LX4s1G-5,2,m1,10000,2.0,percentile
+flame,{root}/exps/base/exp-IkJ3JGAm-5,2,m1,40000,2.0,percentile
+flame,{root}/exps/base/exp-GfcHSh55-5,2,m1,40000,2.0,stratified
+flame,{root}/exps/base/exp-a_uPWCQt-5,2,m1,40000,2.5,percentile
+flame,{root}/exps/base/exp-MuOMli0V-5,2,m1,40000,2.5,stratified
+flame,{root}/exps/base/exp-a86-SK-D-5,2,m1,40000,3.0,percentile
+flame,{root}/exps/base/exp-bcc9cqgs-5,2,m1,40000,3.0,stratified
+flame,{root}/exps/base/exp-ahKdbFnq-5,2,m2,10000,2.0,percentile
+flame,{root}/exps/base/exp-CVqVXNB5-5,2,m5,10000,2.0,percentile
+flame,{root}/exps/base/exp-0Z40rF1f-5,5,e1,10000,2.0,percentile
+flame,{root}/exps/base/exp-aEPQuhZV-5,10,e1,10000,2.0,percentile
+flame,{root}/exps/base/exp-HG6-i98t-5,20,e1,10000,2.0,percentile
+flame,{root}/exps/base/exp-NADQVW0Y-5,20,m1,10000,2.0,percentile
