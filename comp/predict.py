@@ -15,5 +15,5 @@ gpus.autoselect()
 # arrs = [a for a in arrs if os.path.exists(a.replace('dat.hdf5', 'lbl.hdf5'))]
 # sids = [a.split('/')[-2] for a in arrs]
 # pipeline = JarvisPipeline(yml='./ymls/db-prd.yml')
-# outs = pipeline.run(arrs=arrs, sids=sids, output_dir='./pred')
+# outs = pipeline.run(arrs=arrs, sids=sids, output_dir='./base')
 # ==================================================================

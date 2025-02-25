@@ -67,9 +67,7 @@ client:
 xforms:
   batch_size: 4
   patch_size: [1, 128, 128]
-  sampling:
-    1: 1
-    2: 1
+  $sampling: [3-class]
   sampling_binarize: false
   norm_lower: -5.0
   norm_upper: 20.0
@@ -87,18 +85,13 @@ xforms:
       1: 1
     w:
       1: 1
+      2: 2
   mapped:
-    m:
-    - key: w
-      old: {eq: 1}
-      new: 1
-    - key: y
-      old: {eq: 1}
-      new: 2
+    $m: [3-class]
 mapped:
   w:
   - key: w
-    old: {eq: 1}
+    old: {gt: 0}
     new: 1
   - key: d
     old: {lt: 5, gt: 0}
@@ -106,6 +99,9 @@ mapped:
   - key: d
     old: {lt: 0}
     $new: [m1]
+  - key: w
+    old: {eq: 2}
+    $new: [10]
 layers:
   norm: layer_norm
   func: leaky_relu
@@ -203,7 +199,7 @@ search:
         2.0: 2.0
         2.5: 2.5
         3.0: 3.0
-    sampling:
+    sampling-batch:
       keys: client.batch.sampling
       enum:
         percentile:
@@ -215,6 +211,41 @@ search:
         stratified:
           cohort-easy: 0.5
           cohort-hard: 0.5
+    sampling-xforms:
+      keys: xforms.sampling
+      enum:
+        2-class:
+          1: 1
+          2: 1
+        3-class:
+          1: 1
+          2: 1
+          3: 1
+    m:
+      keys: xforms.mapped.m
+      enum:
+        2-class:
+        - key: w
+          old: {eq: 1}
+          new: 1
+        - key: y
+          old: {eq: 1}
+          new: 2
+        3-class:
+        - key: w
+          old: {eq: 1}
+          new: 1
+        - key: y
+          old: {eq: 1}
+          new: 2
+        - key: w
+          old: {eq: 2}
+          new: 3
+    wgt-hard:
+      keys: mapped.w.3.new
+      enum:
+        1: 1
+        10: 10
 output:
   stats:
   - metric: [dsc, h95, 4x4]

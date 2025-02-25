@@ -11,7 +11,10 @@ sform:
 fdefs:
 - kwargs:
     x: dat-raw
-    path: '{code}/exps/base/exp-bcc9cqgs-5/configs.yml'
+    # path: '{code}/exps/base/exp-kNbljXUr-5/configs.yml'
+    # path: '{code}/exps/base/exp-bcc9cqgs-5/configs.yml'
+    # path: '{code}/exps/base/exp-0CCZhJRC-5/configs.yml'
+    # path: '{code}/exps/base/exp-uuPWyDbr-5/configs.yml'
     project_id: 'flame'
   python:
     file: '{auto}/predict.py'

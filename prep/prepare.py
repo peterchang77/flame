@@ -30,6 +30,7 @@ def create_raw(pattern='/data/raw/flame/zips/AccumulatedTrainSet/Raw/*.tif', ign
         dat = '{}/{}.tif'.format(os.path.dirname(pattern), sid)
         lbl = '/data/raw/flame/zips/AccumulatedTrainSet/GroundTruth/{}.png'.format(sid)
         wgt = '/data/raw/flame/zips/DrChang/Train/Background/{}.png'.format(sid)
+        prd = '../comp/base/proc/raw/{}/prd.hdf5'.format(sid)
 
         if not os.path.exists('/data/raw/flame/proc/raw/{}/dat.hdf5'.format(sid)) or not skip_existing:
 
@@ -39,9 +40,14 @@ def create_raw(pattern='/data/raw/flame/zips/AccumulatedTrainSet/Raw/*.tif', ign
 
                 lbl = load_png(lbl)
                 wgt = load_png(wgt)
+                prd = jars.create(prd).data.squeeze()
 
-                # --- Derive
+                # --- Derive wgt
                 wgt[lbl > 0] = 1
+                pos = filter_by_hard_cells(prd, lbl)
+                wgt[pos > 0] = 2
+
+                # --- Derive dst
                 dst = ndimage.distance_transform_edt(1 - lbl)
                 dst[lbl == 1] = ndimage.distance_transform_edt(lbl)[lbl == 1] * -1
                 dst = dst.astype('float16')
@@ -72,6 +78,21 @@ def load_png(path, shape=(1200, 1200)):
     x = io.imread(path)
 
     return (x > 0).astype('uint8')
+
+def filter_by_hard_cells(prd, lbl, min_size=300, max_pred=0.6, **kwargs):
+
+    labeled, _ = ndimage.label(lbl > 0)
+
+    cnts = np.bincount(labeled.ravel())[1:]
+    vals = np.nonzero(cnts > min_size)[0] + 1
+
+    pos = np.zeros_like(lbl)
+
+    for v in vals:
+        if prd[labeled == v].mean() < max_pred:
+            pos[labeled == v] = 1
+
+    return pos 
 
 if __name__ == '__main__':
 
