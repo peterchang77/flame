@@ -3,18 +3,18 @@ _id:
   version: null
 db:
   query:
-    dat-raw: /data/raw/flame/proc/raw/{sid}/dat.hdf5
-    lbl-raw: /data/raw/flame/proc/raw/{sid}/lbl.hdf5
-    wgt-raw: /data/raw/flame/proc/raw/{sid}/wgt.hdf5
-    dst-raw: /data/raw/flame/proc/raw/{sid}/dst.hdf5
+    dat-raw: /data/raw/flame/proc/v00/{sid}/dat.hdf5
+    lbl-raw: /data/raw/flame/proc/v00/{sid}/lbl.hdf5
+    wgt-raw: /data/raw/flame/proc/v00/{sid}/wgt.hdf5
+    dst-raw: /data/raw/flame/proc/v00/{sid}/dst.hdf5
   sform:
-    dat-raw: '{root}/proc/raw/{sid}/dat.hdf5'
-    lbl-raw: '{root}/proc/raw/{sid}/lbl.hdf5'
-    wgt-raw: '{root}/proc/raw/{sid}/wgt.hdf5'
-    dst-raw: '{root}/proc/raw/{sid}/dst.hdf5'
+    dat-raw: '{root}/proc/v00/{sid}/dat.hdf5'
+    lbl-raw: '{root}/proc/v00/{sid}/lbl.hdf5'
+    wgt-raw: '{root}/proc/v00/{sid}/wgt.hdf5'
+    dst-raw: '{root}/proc/v00/{sid}/dst.hdf5'
   fdefs: []
   setup:
-    prefix: db-all
+    prefix: db-v00
     ignore_missing: false
     create_symlinks: false
     create_raw: false
@@ -41,7 +41,9 @@ client:
   batch:
     fold: -1
     size: 4
-    $sampling: [stratified]
+    sampling:
+      cohort-easy: 0.5
+      cohort-hard: 0.5
   specs:
     in_cache: false
     in_memory: true
@@ -58,6 +60,14 @@ client:
         dtype: float32
         loads: wgt-raw
         shape: [1, 1200, 1200, 1]
+      _x-norm_shift:
+        dtype: float32
+        loads: dat-mu
+        shape: [1]
+      _x-norm_scale:
+        dtype: float32
+        loads: dat-sd
+        shape: [1]
       d:
         dtype: float32
         loads: dst-raw
@@ -65,9 +75,9 @@ client:
     load_kwargs:
       verbose: false
 xforms:
-  batch_size: 4
   patch_size: [1, 128, 128]
-  $sampling: [3-class]
+  sampling:
+    1: 2
   sampling_binarize: false
   norm_lower: -5.0
   norm_upper: 20.0
@@ -77,17 +87,15 @@ xforms:
   rand_aff_sca_rigid: true
   rand_shift: [-0.1, 0.1]
   rand_scale: [0.9, 1.1]
-  x: [x, y, w, d]
   y: [y, w]
-  m: m
+  m: w
   classes:
     y:
       1: 1
     w:
       1: 1
-      2: 2
-  mapped:
-    $m: [3-class]
+  mapped: null
+  batch_size: 4
 mapped:
   w:
   - key: w
@@ -96,12 +104,6 @@ mapped:
   - key: d
     old: {lt: 5, gt: 0}
     $new: [2]
-  - key: d
-    old: {lt: 0}
-    $new: [m1]
-  - key: w
-    old: {eq: 2}
-    $new: [10]
 layers:
   norm: layer_norm
   func: leaky_relu
@@ -158,7 +160,7 @@ models:
     name: create_callbacks
     names: [lr_decay]
 params:
-  $steps: [40000]
+  steps: 40000
   steps_per_epoch: 100
   validation_freq: 5
   validation_steps: 100
@@ -169,7 +171,7 @@ params:
     training: '{output_dir}/{save_format}/{base}'
     backbone: '{output_dir}/{save_format}/{base}/{base}_{offset:03d}'
 search:
-  file: '{root}/exps/base/jmodels/csvs/hyper.csv'
+  file: '{root}/exps/v00/jmodels/csvs/hyper.csv'
   vars:
     wgt-bg:
       keys: mapped.w.1.new
@@ -178,74 +180,12 @@ search:
         5: 5
         10: 10
         20: 20
-    wgt-fg:
-      keys: mapped.w.2.new
-      enum:
-        e1: 1
-        m1:
-          mul: -1.0
-        m2:
-          mul: -2.0
-        m5:
-          mul: -5.0
-    steps:
-      keys: params.steps
-      enum:
-        10000: 10000
-        40000: 40000
     gamma:
       keys: models.training.configs.models.losses.functions.0.gamma
       enum:
         2.0: 2.0
         2.5: 2.5
         3.0: 3.0
-    sampling-batch:
-      keys: client.batch.sampling
-      enum:
-        percentile:
-          cohort-lbl-vol-001-p020: 0.2
-          cohort-lbl-vol-001-p040: 0.2
-          cohort-lbl-vol-001-p060: 0.2
-          cohort-lbl-vol-001-p080: 0.2
-          cohort-lbl-vol-001-p100: 0.2
-        stratified:
-          cohort-easy: 0.5
-          cohort-hard: 0.5
-    sampling-xforms:
-      keys: xforms.sampling
-      enum:
-        2-class:
-          1: 1
-          2: 1
-        3-class:
-          1: 1
-          2: 1
-          3: 1
-    m:
-      keys: xforms.mapped.m
-      enum:
-        2-class:
-        - key: w
-          old: {eq: 1}
-          new: 1
-        - key: y
-          old: {eq: 1}
-          new: 2
-        3-class:
-        - key: w
-          old: {eq: 1}
-          new: 1
-        - key: y
-          old: {eq: 1}
-          new: 2
-        - key: w
-          old: {eq: 2}
-          new: 3
-    wgt-hard:
-      keys: mapped.w.3.new
-      enum:
-        1: 1
-        10: 10
 output:
   stats:
   - metric: [dsc, h95, 4x4]

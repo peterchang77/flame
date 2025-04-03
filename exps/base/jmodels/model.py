@@ -10,6 +10,8 @@ from jarvis.auto.predict import create_predictions
 def test_data(configs, n=1, visualize=True, yk=None, training=True, **kwargs):
 
     # --- Create inputs and other data sources
+    import ipdb
+    ipdb.set_trace()
     data, inputs, xforms, client = create_data(configs=configs, **kwargs)
 
     # --- Create model
@@ -64,13 +66,13 @@ if __name__ == '__main__':
     # =========================================================
     # TEST DATA
     # =========================================================
-    # test_data(path_hyper='./csvs/hyper.csv', row=5, yk='w', n=8)
+    test_data(path_hyper='./csvs/hyper.csv', row=5, yk='w', n=8)
     # =========================================================
 
     # --- Train model
-    client = train(path_hyper='./csvs/hyper.csv', verbose=True)
+    # client = train(path_hyper='./csvs/hyper.csv', verbose=True)
 
     # --- Write stats
-    create_predictions(client=client, path_hyper='./csvs/hyper.csv')
+    # create_predictions(client=client, path_hyper='./csvs/hyper.csv')
 
     pass

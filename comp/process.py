@@ -1,5 +1,28 @@
-import numpy as np
+import os, numpy as np
 from scipy import ndimage
+from matplotlib import pyplot 
+
+def create_cmb(base='./sens', edge='./edge', comb='./comb', thresh_base=0.25, thresh_edge=0.50, min_size=20, **kwargs):
+
+    sids = [p.split('/')[-1] for p in sorted(glob.glob('{}/proc/raw/*'.format(base)))]
+
+    for n, sid in enumerate(sids):
+        print('Creating: {:04d} / {:04d}'.format(n + 1, len(sids)), end='\r')
+        
+        b = '{}/proc/raw/{}/prd.hdf5'.format(base, sid)
+        e = '{}/proc/raw/{}/prd.hdf5'.format(edge, sid)
+
+        if os.path.exists(b) and os.path.exists(e):
+
+            b = jars.create(b)
+            e = jars.create(e)
+
+            m = (b.data > thresh_base) * (e.data < thresh_edge)
+            m = m.squeeze()
+            m = jars.blobs.areaopen(m, min_size)
+
+            os.makedirs('{}/{}'.format(comb, sid), exist_ok=True)
+            pyplot.imsave('{}/{}/msk.png'.format(comb, sid), m, cmap='gray')
 
 def create_lbl(arr, thresh_start=0.90, thresh_end=0.5, thresh_step=0.01, repeats=1, **kwargs):
 
@@ -100,31 +123,6 @@ def load(sids):
 
 if __name__ == '__main__':
 
-    from jarvis.utils import arrays as jars
-    from jarvis.tools import show
-    from skimage import io
+    create_cmb()
 
-    dats = []
-    tifs = []
-    prds = []
-
-    for dat in sorted(glob.glob('/data/raw/flame/proc/raw/*/dat.hdf5')):
-
-        print(dat)
-
-        prd = './pred/proc/raw/{}/prd.hdf5'.format(dat.split('/')[-2])
-        tif = '/data/raw/flame/zips/DrChang/Test/TestRaw/{}.tif'.format(dat.split('/')[-2])
-        prd = jars.create(prd)
-
-        if prd.data.mean() > 0.03:
-
-            dat = jars.create(dat)
-            tif = io.imread(tif)
-
-            dats.append(dat.data)
-            prds.append(prd.data)
-            tifs.append(tif)
-
-            if len(dats) == 16:
-                break
     pass
