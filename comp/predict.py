@@ -6,8 +6,11 @@ from jarvis.auto.predict import JarvisPipeline
 gpus.autoselect()
 
 # ==================================================================
-# arr = jars.create('/data/raw/flame/proc/raw/I106//dat.hdf5')
-# lbl = jars.create('/data/raw/flame/proc/raw/I050/lbl.hdf5')
+# arr = jars.create('/data/raw/flame/proc/v00/I8/dat.hdf5')
+# lbl = jars.create('/data/raw/flame/proc/v00/I8/lbl.hdf5')
+# pipeline = JarvisPipeline(yml='./ymls/db-v00.yml')
+# prd = pipeline.run(arrs=arr)
+# ==================================================================
 # pipeline = JarvisPipeline(yml='./ymls/db-base.yml')
 # base = pipeline.run(arrs=arr)
 # pipeline = JarvisPipeline(yml='./ymls/db-edge.yml')

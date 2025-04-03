@@ -12,12 +12,25 @@ def create_hdr(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', csv='./csvs/me
     hard += [sid for sid in sids if '431_' in sid]
     hard += [sid for sid in sids if 'I8' == sid]
 
+    cls1 = [sid for sid in sids if '431_24' in sid]
+    cls2 = [sid for sid in sids if 'Pt431_' in sid]
+    cls3 = ['I8']
+    cls0 = [sid for sid in sids if sid not in cls1 + cls2 + cls3]
+
     df = pd.DataFrame(index=sids)
     df.index.name = 'sid'
 
     df['cohort-all'] = True
+
+    # --- 2-class
     df['cohort-easy'] = [s not in hard for s in sids]
     df['cohort-hard'] = [s in hard for s in sids]
+
+    # --- 4-class
+    df['cohort-cls0'] = [s in cls0 for s in sids]
+    df['cohort-cls1'] = [s in cls1 for s in sids]
+    df['cohort-cls2'] = [s in cls2 for s in sids]
+    df['cohort-cls3'] = [s in cls3 for s in sids]
 
     df.to_csv(csv)
 

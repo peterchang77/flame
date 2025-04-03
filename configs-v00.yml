@@ -41,9 +41,7 @@ client:
   batch:
     fold: -1
     size: 4
-    sampling:
-      cohort-easy: 0.5
-      cohort-hard: 0.5
+    $sampling: [4-class]
   specs:
     in_cache: false
     in_memory: true
@@ -75,7 +73,7 @@ client:
     load_kwargs:
       verbose: false
 xforms:
-  patch_size: [1, 128, 128]
+  $patch_size: [256]
   sampling:
     1: 2
   sampling_binarize: false
@@ -186,6 +184,22 @@ search:
         2.0: 2.0
         2.5: 2.5
         3.0: 3.0
+    sampling:
+      keys: client.batch.sampling
+      enum:
+        2-class:
+          cohort-easy: 0.5
+          cohort-hard: 0.5
+        4-class:
+          cohort-cls0: 0.25
+          cohort-cls1: 0.25
+          cohort-cls2: 0.25
+          cohort-cls3: 0.25
+    patch_size:
+      keys: xforms.patch_size
+      enum:
+        128: [1, 128, 128]
+        256: [1, 256, 256]
 output:
   stats:
   - metric: [dsc, h95, 4x4]
