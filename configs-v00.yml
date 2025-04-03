@@ -4,11 +4,15 @@ _id:
 db:
   query:
     dat-raw: /data/raw/flame/proc/v00/{sid}/dat.hdf5
+    win-raw: /data/raw/flame/proc/v00/{sid}/win.hdf5
+    hst-raw: /data/raw/flame/proc/v00/{sid}/hst.hdf5
     lbl-raw: /data/raw/flame/proc/v00/{sid}/lbl.hdf5
     wgt-raw: /data/raw/flame/proc/v00/{sid}/wgt.hdf5
     dst-raw: /data/raw/flame/proc/v00/{sid}/dst.hdf5
   sform:
     dat-raw: '{root}/proc/v00/{sid}/dat.hdf5'
+    win-raw: '{root}/proc/v00/{sid}/win.hdf5'
+    hst-raw: '{root}/proc/v00/{sid}/hst.hdf5'
     lbl-raw: '{root}/proc/v00/{sid}/lbl.hdf5'
     wgt-raw: '{root}/proc/v00/{sid}/wgt.hdf5'
     dst-raw: '{root}/proc/v00/{sid}/dst.hdf5'
@@ -46,10 +50,7 @@ client:
     in_cache: false
     in_memory: true
     xs:
-      x:
-        dtype: float32
-        loads: dat-raw
-        shape: [1, 1200, 1200, 1]
+      $x: [hst]
       y:
         dtype: float32
         loads: lbl-raw
@@ -58,14 +59,6 @@ client:
         dtype: float32
         loads: wgt-raw
         shape: [1, 1200, 1200, 1]
-      _x-norm_shift:
-        dtype: float32
-        loads: dat-mu
-        shape: [1]
-      _x-norm_scale:
-        dtype: float32
-        loads: dat-sd
-        shape: [1]
       d:
         dtype: float32
         loads: dst-raw
@@ -200,6 +193,21 @@ search:
       enum:
         128: [1, 128, 128]
         256: [1, 256, 256]
+    x:
+      keys: client.specs.xs.x
+      enum:
+        dat:
+          dtype: float32
+          loads: dat-raw
+          shape: [1, 1200, 1200, 1]
+        hst:
+          dtype: float32
+          loads: hst-raw
+          shape: [1, 1200, 1200, 11]
+        win:
+          dtype: float32
+          loads: win-raw
+          shape: [1, 1200, 1200, 11]
 output:
   stats:
   - metric: [dsc, h95, 4x4]

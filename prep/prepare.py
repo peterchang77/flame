@@ -109,7 +109,10 @@ def create_v00(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1',)
 
         if not os.path.exists('/data/raw/flame/proc/v00/{}/dat.hdf5'.format(sid)) or not skip_existing:
 
+            hst = load_tif(dat, method='hist')
             dat = load_tif(dat)
+            win = np.expand_dims(multi_window(dat), axis=0)
+            hst = np.expand_dims(multi_window(hst), axis=0)
 
             if not test:
 
@@ -125,22 +128,45 @@ def create_v00(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1',)
                 dst = dst.astype('float16')
 
             jars.create(data=dat).to_hdf5('/data/raw/flame/proc/v00/{}/dat.hdf5'.format(sid))
+            jars.create(data=win).to_hdf5('/data/raw/flame/proc/v00/{}/win.hdf5'.format(sid))
+            jars.create(data=hst).to_hdf5('/data/raw/flame/proc/v00/{}/hst.hdf5'.format(sid))
 
             if not test:
                 jars.create(data=lbl).to_hdf5('/data/raw/flame/proc/v00/{}/lbl.hdf5'.format(sid))
                 jars.create(data=wgt).to_hdf5('/data/raw/flame/proc/v00/{}/wgt.hdf5'.format(sid))
                 jars.create(data=dst).to_hdf5('/data/raw/flame/proc/v00/{}/dst.hdf5'.format(sid))
 
-def load_tif(path, shape=(1200, 1200), kernel_size=50):
+def load_tif(path, shape=(1200, 1200), kernel_size=50, method='adapthist'):
 
     if not os.path.exists(path):
         return np.zeros(shape, dtype='float16')
 
     x = io.imread(path)
-    x = exposure.equalize_adapthist(x, kernel_size=kernel_size)
+
+    if method == 'adapthist':
+        x = exposure.equalize_adapthist(x, kernel_size=kernel_size)
+    else:
+        x = exposure.equalize_hist(x)
+
     x = (x - x.mean()) / (x.std())
 
     return x.astype('float16')
+
+def multi_window(x, axis=-1):
+
+    c = lambda x, lower, upper : (x.clip(lower, upper) - lower) / (upper - lower + 1e-6)
+
+    p = np.percentile(x, np.linspace(0, 100, 11))
+    m = [c(x, lower, upper) for lower, upper in zip(p[:-1], p[1:])]
+
+    for n in range(2, len(m) + 1):
+        if not m[-n].any():
+            m[-n][:] = m[-n + 1][:]
+
+    lower, upper = np.percentile(x, [0, 99.9])
+    m = [c(x, lower, upper)] + m
+
+    return np.stack(m, axis=axis)
 
 def load_png(path, shape=(1200, 1200)):
 
