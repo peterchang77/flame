@@ -136,6 +136,52 @@ def create_v00(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1',)
                 jars.create(data=wgt).to_hdf5('/data/raw/flame/proc/v00/{}/wgt.hdf5'.format(sid))
                 jars.create(data=dst).to_hdf5('/data/raw/flame/proc/v00/{}/dst.hdf5'.format(sid))
 
+def create_v01(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1', 'I2', 'I3'), test=False, skip_existing=True, **kwargs):
+    """
+    Method to create training data
+
+      lbl : 1  ==> nuclei
+      lbl : 2  ==> inner border (1 pixel) 
+      lbl : 3  ==> outer border (4 pixel) 
+      dst : <0 ==> distance transform (nuclei)
+            >1 ==> distance transform (edges)
+
+    """
+    sids = [os.path.basename(p)[:-4] for p in sorted(glob.glob(pattern))]
+    sids = [s for s in sids if s not in ignore]
+
+    for sid in sids:
+
+        print('Creating: {}'.format(sid))
+
+        dat = '{}/{}.tif'.format(os.path.dirname(pattern), sid)
+        lbl = '/data/raw/flame/zips/TrainSet/GroundTruth/{}.png'.format(sid)
+
+        if not os.path.exists('/data/raw/flame/proc/v01/{}/dat.hdf5'.format(sid)) or not skip_existing:
+
+            dat = load_tif(dat, method='hist')
+            hst = np.expand_dims(multi_window(dat), axis=0)
+
+            if not test:
+
+                lbl = load_png(lbl, shape=dat.shape)
+
+                # --- Derive dst
+                dst = ndimage.distance_transform_edt(1 - lbl)
+                dst[lbl == 1] = ndimage.distance_transform_edt(lbl)[lbl == 1] * -1
+                dst = dst.astype('float16')
+
+                # --- Derive lbl
+                lbl[(dst <= 0) & (dst >= -1)] = 2
+                lbl[(dst <= 4) & (dst >   0)] = 3
+
+            jars.create(data=dat).to_hdf5('/data/raw/flame/proc/v01/{}/dat.hdf5'.format(sid))
+            jars.create(data=hst).to_hdf5('/data/raw/flame/proc/v01/{}/hst.hdf5'.format(sid))
+
+            if not test:
+                jars.create(data=lbl).to_hdf5('/data/raw/flame/proc/v01/{}/lbl.hdf5'.format(sid))
+                jars.create(data=dst).to_hdf5('/data/raw/flame/proc/v01/{}/dst.hdf5'.format(sid))
+
 def load_tif(path, shape=(1200, 1200), kernel_size=50, method='adapthist'):
 
     if not os.path.exists(path):
@@ -249,6 +295,7 @@ if __name__ == '__main__':
     # create_raw(pattern='/data/raw/flame/zips/DrChang/Test/TestRaw/*.tif', test=True)
     # ============================================================================
     # create_v00(skip_existing=False)
+    # create_v01(skip_existing=False)
     # ============================================================================
     # create_prd()
     # ============================================================================
