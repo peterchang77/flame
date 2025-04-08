@@ -1,0 +1,13 @@
+_id:
+  project: flame
+  version: null
+files:
+  csv: /data/csvs/db-v01.csv.gz
+  yml: /data/ymls/db-v01.yml
+query: {}
+sform:
+  dat-raw: '{root}/proc/v01/{sid}/dat.hdf5'
+  hst-raw: '{root}/proc/v01/{sid}/hst.hdf5'
+  lbl-raw: '{root}/proc/v01/{sid}/lbl.hdf5'
+  dst-raw: '{root}/proc/v01/{sid}/dst.hdf5'
+fdefs: []
