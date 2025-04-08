@@ -144,7 +144,7 @@ def create_v01(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1', 
       lbl : 2  ==> inner border (1 pixel) 
       lbl : 3  ==> outer border (4 pixel) 
       dst : <0 ==> distance transform (nuclei)
-            >1 ==> distance transform (edges)
+            >0 ==> distance transform (edges)
 
     """
     sids = [os.path.basename(p)[:-4] for p in sorted(glob.glob(pattern))]

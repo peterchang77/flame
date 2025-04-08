@@ -1,5 +1,5 @@
 import os, glob
-from skimage import io
+from jarvis.utils import io 
 from jarvis.utils.general import gpus
 from jarvis.utils import arrays as jars
 from jarvis.auto.predict import JarvisPipeline
@@ -7,19 +7,43 @@ from jarvis.auto.predict import JarvisPipeline
 gpus.autoselect()
 
 # ==================================================================
-# arr = jars.create('/data/raw/flame/proc/v00/431_241209_Image02_FOV370_z-90_32A1/dat.hdf5')
-# arr = jars.create('/data/raw/flame/proc/v00/431_241209_Image02_FOV370_z-90_32A1/win.hdf5')
+# INTERACTIVE
 # ==================================================================
 # sid = '431_241106_LeftThigh1_Image01_FOV600_z65_32A0'
 # sid = 'Pt431_LT1_Image01_FOV600_z65_32A1'
 # sid = '431_241209_Image02_FOV370_z-90_32A1'
 # sid = 'I8'
-# arr = jars.create('/data/raw/flame/proc/v00/{}/hst.hdf5'.format(sid))
-# lbl = jars.create('/data/raw/flame/proc/v00/{}/lbl.hdf5'.format(sid))
-# raw = jars.create(data=io.imread('/data/raw/flame/zips/TrainSet/Raw/{}.tif'.format(sid)))
+# sid = 'I050'
+# arr = jars.create('/data/raw/flame/proc/v01/{}/hst.hdf5'.format(sid))
+# lbl = jars.create('/data/raw/flame/proc/v01/{}/lbl.hdf5'.format(sid))
+# raw = jars.create('/data/raw/flame/zips/TrainSet/Raw/{}.tif'.format(sid))
 # ==================================================================
-# pipeline = JarvisPipeline(yml='./ymls/db-v00.yml')
-# prd = pipeline.run(arrs=arr)
+# pipeline = JarvisPipeline(yml='./ymls/db-v01.yml')
+# outs = pipeline.run(arrs=arr, cols=['rpn-raw', 'fpr-raw'])
+# mask = outs['rpn-raw'].data > 0.5
+# mask[outs['fpr-raw'].data > 0.25] = 0
+# ==================================================================
+# FULL 
+# ==================================================================
+# arrs = sorted(glob.glob('/data/raw/flame/zips/DrChang/Test/TestRaw/*.tif')) 
+# sids = [a.split('/')[-1].replace('.tif', '') for a in arrs]
+# ==================================================================
+# arrs = sorted(glob.glob('/data/raw/flame/proc/v01/*/hst.hdf5')) 
+# sids = [a.split('/')[-2] for a in arrs]
+# pipeline = JarvisPipeline(yml='./ymls/db-v01.yml', save_funcs=io.save_funcs)
+# db = pipeline.run(
+#     arrs={'hst-raw': arrs}, 
+#     sids=sids,
+#     # cols=['rpn-raw'], 
+#     # cols=['fpr-raw'], 
+#     cols=['msk-png'], 
+#     output_dir='./pred',
+#     skip_existing=False,
+#     align_with=False)
+# ==================================================================
+
+# ==================================================================
+# LEGACY
 # ==================================================================
 # pipeline = JarvisPipeline(yml='./ymls/db-base.yml')
 # base = pipeline.run(arrs=arr)
