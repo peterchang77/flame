@@ -7,6 +7,9 @@ def create_hst(raw, **kwargs):
     if type(raw) is str:
         return {}
 
+    if raw.data.shape[0] > 1:
+        raw.data = np.sum(raw.data, axis=0, keepdims=True)
+
     raw.data = equalize(raw.data, **kwargs)
     raw.data = multi_window(raw.data, **kwargs)
     raw.data = raw.data.astype('float16')
