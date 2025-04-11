@@ -2,8 +2,8 @@ _id:
   project: flame 
   version: null
 files:
-  csv: /comp/csvs/db-v00.csv.gz
-  yml: /comp/ymls/db-v00.yml
+  csv: /comp/csvs/db-v01.csv.gz
+  yml: /comp/ymls/db-v01.yml
 query: {}
 sform:
   dat-raw: '{root}/proc/raw/{sid}/dat.hdf5'
