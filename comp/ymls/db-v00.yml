@@ -1,0 +1,29 @@
+_id:
+  project: flame 
+  version: null
+files:
+  csv: /comp/csvs/db-v00.csv.gz
+  yml: /comp/ymls/db-v00.yml
+query: {}
+sform:
+  dat-raw: '{root}/proc/raw/{sid}/dat.hdf5'
+  prd-raw: '{root}/proc/raw/{sid}/prd.hdf5'
+fdefs:
+- kwargs:
+    x: dat-raw
+    # =======================================================
+    # path: '{code}/exps/v00/exp-gNFzSkeT-5/configs.yml'
+    # path: '{code}/exps/v00/exp-AYC8z4Ce-5/configs.yml'
+    # =======================================================
+    # path: '{code}/exps/v00/exp-qgt6TXeA-5/configs.yml'
+    # path: '{code}/exps/v00/exp-wtywnXC4-5/configs.yml'
+    # =======================================================
+    path: '{code}/exps/v00/exp-f7lL88_n-5/configs.yml'
+    # path: '{code}/exps/v00/exp-h130x3KF-5/configs.yml'
+    # =======================================================
+    project_id: 'flame'
+  python:
+    file: '{auto}/predict.py'
+    name: predict
+  return:
+    y: prd-raw
