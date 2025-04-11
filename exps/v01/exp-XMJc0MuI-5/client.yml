@@ -1,0 +1,82 @@
+_id:
+  project: flame
+  version: null
+_db: /home/peter/python/flame/data/ymls/db-v01.yml
+current:
+  train:
+    cohort-cls0:
+      epoch: 1142
+      count: 31
+      rseed: 3961717014
+    cohort-cls1:
+      epoch: 6666
+      count: 5
+      rseed: 1416856065
+    cohort-cls2:
+      epoch: 10000
+      count: 1
+      rseed: 1426957315
+    cohort-cls3:
+      epoch: 40000
+      count: 1
+      rseed: 1536049929
+  valid:
+    cohort-cls0:
+      epoch: 0
+      count: 0
+      rseed: 2162155019
+    cohort-cls1:
+      epoch: 0
+      count: 0
+      rseed: 548639566
+    cohort-cls2:
+      epoch: 0
+      count: 0
+      rseed: 2347668617
+    cohort-cls3:
+      epoch: 0
+      count: 0
+      rseed: 466152365
+batch:
+  fold: -1
+  size: 4
+  sampling:
+    train:
+      cohort-cls0: 0.25
+      cohort-cls1: 0.25
+      cohort-cls2: 0.25
+      cohort-cls3: 0.25
+    valid:
+      cohort-cls0: 0.25
+      cohort-cls1: 0.25
+      cohort-cls2: 0.25
+      cohort-cls3: 0.25
+  training:
+    train: 0.8
+    valid: 0.2
+specs:
+  xs:
+    x:
+      dtype: float32
+      input: true
+      loads: hst-raw
+      norms: null
+      shape:
+        saved: [1, 1200, 1200, 11]
+        input: [1, 1200, 1200, 11]
+      xform: null
+    y:
+      dtype: float32
+      input: true
+      loads: lbl-raw
+      norms: null
+      shape:
+        saved: [1, 1200, 1200, 1]
+        input: [1, 1200, 1200, 1]
+      xform: null
+  ys: {}
+  load_kwargs:
+    verbose: false
+  in_cache: false
+  in_memory: true
+  tiles: [false, false, false, false]
