@@ -46,4 +46,4 @@ fdefs:
     file: '{root}/comp/defs/xform/data.py'
     name: create_msk 
   return:
-     msk: msk-png
+    msk: msk-png
