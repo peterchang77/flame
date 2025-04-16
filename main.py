@@ -1,9 +1,13 @@
 import os, glob
+import tensorflow as tf
 from jarvis.utils import io
 from jarvis.utils.general import tools as jtools
 from jarvis.auto.predict import JarvisPipeline
 
-def run(data='/data', main='./main.py', **kwargs):
+def run(data='/data', main='./main.py', verbose='1', **kwargs):
+
+    # --- Set verbose
+    tf.autograph.set_verbosity(0)
 
     # --- Set Jarvis paths
     code = os.path.abspath(os.path.dirname(main))
