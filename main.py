@@ -19,7 +19,7 @@ def run(data='/data', main='./main.py', verbose='1', **kwargs):
 
     # --- Create pipeline 
     pipeline = JarvisPipeline(
-        yml='{}/comp/ymls/db-v01.yml'.format(code), 
+        yml='{}/comp/ymls/db-v02.yml'.format(code), 
         ignore_proc=True,
         save_funcs=io.save_funcs)
 
