@@ -1,0 +1,9 @@
+*.swp*
+*.hdf5
+__pycache__
+outs
+exp-*/
+stats/
+logdirs/
+scripts/
+legacy/
