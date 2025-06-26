@@ -4,9 +4,10 @@ from scipy import ndimage
 from skimage import io, exposure, morphology
 from jarvis.utils import arrays as jars
 
-def create_hdr(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', csv='./csvs/meta.csv'):
+def create_hdr(v='v02', csv='./csvs/meta.csv'):
 
-    sids = [os.path.basename(p)[:-4] for p in sorted(glob.glob(pattern))]
+    sids = [p.split('/')[-2] for p in sorted(glob.glob('/data/raw/flame/proc/{}/*/dat.hdf5'.format(v)))]
+    v01_ = [p.split('/')[-2] for p in sorted(glob.glob('/data/raw/flame/proc/v01/*/dat.hdf5'))]
 
     hard = []
     hard += [sid for sid in sids if '431_' in sid]
@@ -15,7 +16,8 @@ def create_hdr(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', csv='./csvs/me
     cls1 = [sid for sid in sids if '431_24' in sid]
     cls2 = [sid for sid in sids if 'Pt431_' in sid]
     cls3 = ['I8']
-    cls0 = [sid for sid in sids if sid not in cls1 + cls2 + cls3]
+    cls4 = [sid for sid in sids if sid not in v01_]
+    cls0 = [sid for sid in sids if sid not in cls1 + cls2 + cls3 + cls4]
 
     df = pd.DataFrame(index=sids)
     df.index.name = 'sid'
@@ -31,6 +33,7 @@ def create_hdr(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', csv='./csvs/me
     df['cohort-cls1'] = [s in cls1 for s in sids]
     df['cohort-cls2'] = [s in cls2 for s in sids]
     df['cohort-cls3'] = [s in cls3 for s in sids]
+    df['cohort-cls4'] = [s in cls4 for s in sids]
 
     df.to_csv(csv)
 
@@ -136,7 +139,7 @@ def create_v00(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1',)
                 jars.create(data=wgt).to_hdf5('/data/raw/flame/proc/v00/{}/wgt.hdf5'.format(sid))
                 jars.create(data=dst).to_hdf5('/data/raw/flame/proc/v00/{}/dst.hdf5'.format(sid))
 
-def create_v01(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1', 'I2', 'I3'), test=False, skip_existing=True, **kwargs):
+def create_v01(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1', 'I2', 'I3'), test=False, skip_existing=True, suffix='v01', **kwargs):
     """
     Method to create training data
 
@@ -155,32 +158,36 @@ def create_v01(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1', 
         print('Creating: {}'.format(sid))
 
         dat = '{}/{}.tif'.format(os.path.dirname(pattern), sid)
-        lbl = '/data/raw/flame/zips/TrainSet/GroundTruth/{}.png'.format(sid)
+        lbl = dat.replace('Raw', 'GroundTruth').replace('.tif', '.png')
 
-        if not os.path.exists('/data/raw/flame/proc/v01/{}/dat.hdf5'.format(sid)) or not skip_existing:
+        if not os.path.exists(lbl):
+            print('Error missing file: {}'.format(lbl))
 
-            dat = load_tif(dat, method='hist')
-            hst = np.expand_dims(multi_window(dat), axis=0)
+        else:
+            if not os.path.exists('/data/raw/flame/proc/{}/{}/dat.hdf5'.format(suffix, sid)) or not skip_existing:
 
-            if not test:
+                dat = load_tif(dat, method='hist')
+                hst = np.expand_dims(multi_window(dat), axis=0)
 
-                lbl = load_png(lbl, shape=dat.shape)
+                if not test:
 
-                # --- Derive dst
-                dst = ndimage.distance_transform_edt(1 - lbl)
-                dst[lbl == 1] = ndimage.distance_transform_edt(lbl)[lbl == 1] * -1
-                dst = dst.astype('float16')
+                    lbl = load_png(lbl, shape=dat.shape)
 
-                # --- Derive lbl
-                lbl[(dst <= 0) & (dst >= -1)] = 2
-                lbl[(dst <= 4) & (dst >   0)] = 3
+                    # --- Derive dst
+                    dst = ndimage.distance_transform_edt(1 - lbl)
+                    dst[lbl == 1] = ndimage.distance_transform_edt(lbl)[lbl == 1] * -1
+                    dst = dst.astype('float16')
 
-            jars.create(data=dat).to_hdf5('/data/raw/flame/proc/v01/{}/dat.hdf5'.format(sid))
-            jars.create(data=hst).to_hdf5('/data/raw/flame/proc/v01/{}/hst.hdf5'.format(sid))
+                    # --- Derive lbl
+                    lbl[(dst <= 0) & (dst >= -1)] = 2
+                    lbl[(dst <= 4) & (dst >   0)] = 3
 
-            if not test:
-                jars.create(data=lbl).to_hdf5('/data/raw/flame/proc/v01/{}/lbl.hdf5'.format(sid))
-                jars.create(data=dst).to_hdf5('/data/raw/flame/proc/v01/{}/dst.hdf5'.format(sid))
+                jars.create(data=dat).to_hdf5('/data/raw/flame/proc/{}/{}/dat.hdf5'.format(suffix, sid))
+                jars.create(data=hst).to_hdf5('/data/raw/flame/proc/{}/{}/hst.hdf5'.format(suffix, sid))
+
+                if not test:
+                    jars.create(data=lbl).to_hdf5('/data/raw/flame/proc/{}/{}/lbl.hdf5'.format(suffix, sid))
+                    jars.create(data=dst).to_hdf5('/data/raw/flame/proc/{}/{}/dst.hdf5'.format(suffix, sid))
 
 def load_tif(path, shape=(1200, 1200), kernel_size=50, method='adapthist'):
 
@@ -289,13 +296,14 @@ def create_prd(pattern='../comp/sens/proc/raw/*/prd.hdf5', **kwargs):
 if __name__ == '__main__':
 
     # ============================================================================
-    # create_hdr()
+    # create_hdr(v='v02')
     # ============================================================================
     # create_raw(pattern='/data/raw/flame/zips/AccumulatedTrainSet/Raw/*.tif', skip_existing=False)
     # create_raw(pattern='/data/raw/flame/zips/DrChang/Test/TestRaw/*.tif', test=True)
     # ============================================================================
     # create_v00(skip_existing=False)
     # create_v01(skip_existing=False)
+    # create_v01(pattern='/data/raw/flame/zips/06-25/Raw/*.tif', suffix='v02', skip_existing=False)
     # ============================================================================
     # create_prd()
     # ============================================================================
