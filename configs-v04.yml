@@ -1,0 +1,219 @@
+_id:
+  project: flame
+  version: null
+db:
+  query:
+    dat-raw: /data/raw/flame/proc/v04/{sid}/dat.hdf5
+    hst-raw: /data/raw/flame/proc/v04/{sid}/hst.hdf5
+    lbl-raw: /data/raw/flame/proc/v04/{sid}/lbl.hdf5
+    dst-raw: /data/raw/flame/proc/v04/{sid}/dst.hdf5
+  sform:
+    dat-raw: '{root}/proc/v04/{sid}/dat.hdf5'
+    hst-raw: '{root}/proc/v04/{sid}/hst.hdf5'
+    lbl-raw: '{root}/proc/v04/{sid}/lbl.hdf5'
+    dst-raw: '{root}/proc/v04/{sid}/dst.hdf5'
+  fdefs: []
+  setup:
+    prefix: db-v04
+    ignore_missing: false
+    create_symlinks: false
+    create_raw: false
+    create_header_from_csv: null
+    create_groups: null
+    create_stats:
+    - name: [shape]
+      cols: [dat, hst]
+      mask: true
+    - name: [max, vol]
+      cols: [lbl]
+    create_cohorts:
+    - name: [percentile]
+      cols: [lbl-vol]
+      bins: 5
+    create_valid:
+      folds: 5
+      group: null
+    create_model:
+      subsample: false
+      max_shape: [1, 256, 256]
+      max_ratio: 2
+      ignore_vsize: true
+client:
+  batch:
+    fold: -1
+    size: 128
+    $sampling: [5-class]
+  specs:
+    in_cache: false
+    in_memory: true
+    xs:
+      x:
+        dtype: float32
+        loads: hst-raw
+        shape: [1, 256, 256, 11]
+      y:
+        dtype: float32
+        loads: lbl-raw
+        shape: [1, 256, 256, 1]
+    load_kwargs:
+      verbose: false
+xforms:
+  norm_lower: null
+  norm_upper: null
+  rand_aff_2d: true
+  rand_aff_sca: [0.8, 1.2]
+  rand_aff_rot: [-0.5, 0.5]
+  rand_aff_sca_rigid: true
+  rand_shift: [-0.1, 0.1]
+  rand_scale: [0.9, 1.1]
+  y: [y]
+  m: null
+  classes:
+    y: 3
+  mapped: null
+mapped:
+  $y: [cell]
+  $w: [cell]
+layers:
+  norm: batch_norm
+  func: gelu
+blocks: {}
+losses: {}
+models:
+  kwargs:
+    use:
+      shuffle: false
+  backbone:
+    name: create_backbone
+    configs:
+      models:
+        pattern:
+          name: create_pattern
+          names: [encoder, decoder, head]
+  head:
+    name: create_head
+    base: head
+    sources:
+      strategy: deep
+      previous: decoder
+    filters: [1]
+  training:
+    name: create_training
+    configs:
+      models:
+        losses:
+          functions:
+          - name: foc
+            $gamma: [2.0]
+            alpha: 1.0
+            y_true: y
+            y_pred: head
+            w_samp: w
+            w_loss: 1.0
+          - name: sft
+            y_true: y
+            y_pred: head
+            w_samp: w
+            w_loss: 1.0
+        metric:
+          functions:
+          - name: dsc
+            y_true: y
+            y_pred: head
+            w_samp: w
+  optimizer:
+    name: create_optimizer
+    method: Adam
+    learning_rate: 0.02
+  lr_decay:
+    name: create_lr_decay
+    decay: 0.99
+  callbacks:
+    name: create_callbacks
+    names: [lr_decay]
+params:
+  steps: 40000
+  steps_per_epoch: 100
+  validation_freq: 5
+  validation_steps: 100
+  save_freq: 10
+  save_best_only: []
+  save_best_mode: max
+  save_paths:
+    training: '{output_dir}/{save_format}/{base}'
+    backbone: '{output_dir}/{save_format}/{base}/{base}_{offset:03d}'
+  workers: 2
+search:
+  file: '{root}/exps/v04/jmodels/csvs/hyper.csv'
+  vars:
+    sampling:
+      keys: client.batch.sampling
+      enum:
+        5-class:
+          cohort-cls0: 0.1
+          cohort-cls1: 0.1
+          cohort-cls2: 0.1
+          cohort-cls3: 0.1
+          cohort-cls4: 0.6
+    gamma:
+      keys: models.training.configs.models.losses.functions.0.gamma
+      enum:
+        2.0: 2.0
+        2.5: 2.5
+        3.0: 3.0
+    y:
+      keys: mapped.y
+      enum:
+        cell:
+        - key: y
+          old: {eq: [1, 2]}
+          new: 1
+        edge:
+        - key: y
+          old: {eq: [2, 3]}
+          new: 1
+    w:
+      keys: mapped.w
+      enum:
+        cell:
+        - key: y
+          old: {gte: 0}
+          new: 1
+        edge:
+        - key: y
+          old: {gt: 0}
+          new: 1
+        - key: y
+          old: {eq: [2, 3]}
+          $new: [2]
+    wgt-edge:
+      keys: mapped.w.edge.1.new
+      enum:
+        2: 2
+        5: 5
+        10: 10
+output:
+  stats:
+  - metric: [dsc, h95, 4x4]
+    y_true: y
+    y_pred: head-0
+    w_samp: w
+    thresh: [0.01, 0.02, 0.03, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.97, 0.98, 0.99]
+    models:
+      epochs: [-1]
+      graphs: [backbone]
+  cohort:
+    suffix: last
+    column:
+      valid: -1
+  rename:
+    cohort-train: Train
+    cohort-valid: Valid
+    cohort-whole: Whole
+    column-head.*:binary: Foreground
+    dsc: Dice Score
+    h95: Hausdorff Distance
+    sen: Sensitivity
+    ppv: Positive Predictive Value
+  merged: []
+  report: null

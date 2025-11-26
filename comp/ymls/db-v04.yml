@@ -1,0 +1,49 @@
+_id:
+  project: flame 
+  version: null
+files:
+  csv: /comp/csvs/db-v04.csv.gz
+  yml: /comp/ymls/db-v04.yml
+query: {}
+sform:
+  dat-raw: '{root}/proc/raw/{sid}/dat.hdf5'
+  hst-raw: '{root}/proc/raw/{sid}/hst.hdf5'
+  rpn-raw: '{root}/proc/raw/{sid}/rpn.hdf5'
+  fpr-raw: '{root}/proc/raw/{sid}/fpr.hdf5'
+  msk-png: '{root}/proc/png/{sid}/msk.png'
+fdefs:
+- kwargs:
+    raw: dat-raw
+  python:
+    file: '{root}/comp/defs/xform/data.py'
+    name: create_hst 
+  return:
+    hst: hst-raw
+- kwargs:
+    x: hst-raw
+    path: '{code}/exps/v04/exp-6Y3cMLLv-5/configs-infer.yml'
+    project_id: 'flame'
+  python:
+    file: '{auto}/predict.py'
+    name: predict
+  return:
+    y: rpn-raw
+- kwargs:
+    x: hst-raw
+    path: '{code}/exps/v04/exp-mteCRq1Y-5/configs-infer.yml'
+    project_id: 'flame'
+  python:
+    file: '{auto}/predict.py'
+    name: predict
+  return:
+    y: fpr-raw
+- kwargs:
+    rpn: rpn-raw
+    fpr: fpr-raw
+    rpn_thresh: 0.50
+    fpr_thresh: 0.25
+  python:
+    file: '{root}/comp/defs/xform/data.py'
+    name: create_msk 
+  return:
+    msk: msk-png

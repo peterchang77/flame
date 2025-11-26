@@ -2,7 +2,9 @@ import os, glob, shutil
 import numpy as np, pandas as pd
 from scipy import ndimage
 from skimage import io, exposure, morphology
+from jarvis.utils.db import DB
 from jarvis.utils import arrays as jars
+from jarvis.train.transform import extract_volume_patches
 
 def create_hdr(v='v02', csv='./csvs/meta.csv'):
 
@@ -15,8 +17,13 @@ def create_hdr(v='v02', csv='./csvs/meta.csv'):
 
     cls1 = [sid for sid in sids if '431_24' in sid]
     cls2 = [sid for sid in sids if 'Pt431_' in sid]
-    cls3 = ['I8']
-    cls4 = [sid for sid in sids if sid not in v01_]
+    cls3 = [sid for sid in sids if 'I8' in sid]
+
+    if v in ['v04']:
+        cls4 = [sid for sid in sids if sid[:-4] not in v01_]
+    else:
+        cls4 = [sid for sid in sids if sid not in v01_]
+
     cls0 = [sid for sid in sids if sid not in cls1 + cls2 + cls3 + cls4]
 
     df = pd.DataFrame(index=sids)
@@ -36,6 +43,13 @@ def create_hdr(v='v02', csv='./csvs/meta.csv'):
     df['cohort-cls4'] = [s in cls4 for s in sids]
 
     df.to_csv(csv)
+
+def join_hdr(v='v02', csv='./csvs/meta.csv'):
+
+    db = DB('../data/ymls/db-{}.yml'.format(v))
+    df = pd.read_csv(csv, index_col='sid')
+    db.header = db.header.join(df)
+    db.to_yml()
 
 def create_raw(pattern='/data/raw/flame/zips/AccumulatedTrainSet/Raw/*.tif', ignore=('I1',), test=False, skip_existing=True, **kwargs):
     """
@@ -139,7 +153,7 @@ def create_v00(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1',)
                 jars.create(data=wgt).to_hdf5('/data/raw/flame/proc/v00/{}/wgt.hdf5'.format(sid))
                 jars.create(data=dst).to_hdf5('/data/raw/flame/proc/v00/{}/dst.hdf5'.format(sid))
 
-def create_v01(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1', 'I2', 'I3'), test=False, skip_existing=True, suffix='v01', **kwargs):
+def create_v01(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1', 'I2', 'I3'), test=False, skip_existing=True, suffix='v01', method='hist', **kwargs):
     """
     Method to create training data
 
@@ -166,8 +180,8 @@ def create_v01(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1', 
         else:
             if not os.path.exists('/data/raw/flame/proc/{}/{}/dat.hdf5'.format(suffix, sid)) or not skip_existing:
 
-                dat = load_tif(dat, method='hist')
-                hst = np.expand_dims(multi_window(dat), axis=0)
+                dat = load_tif(dat, method=method)
+                hst = np.expand_dims(multi_window(dat), axis=0).astype('float16')
 
                 if not test:
 
@@ -182,12 +196,36 @@ def create_v01(pattern='/data/raw/flame/zips/TrainSet/Raw/*.tif', ignore=('I1', 
                     lbl[(dst <= 0) & (dst >= -1)] = 2
                     lbl[(dst <= 4) & (dst >   0)] = 3
 
-                jars.create(data=dat).to_hdf5('/data/raw/flame/proc/{}/{}/dat.hdf5'.format(suffix, sid))
-                jars.create(data=hst).to_hdf5('/data/raw/flame/proc/{}/{}/hst.hdf5'.format(suffix, sid))
+                save_arr(arr=dat, key='dat', sid=sid, suffix=suffix, **kwargs)
+                save_arr(arr=hst, key='hst', sid=sid, suffix=suffix, **kwargs)
 
                 if not test:
-                    jars.create(data=lbl).to_hdf5('/data/raw/flame/proc/{}/{}/lbl.hdf5'.format(suffix, sid))
-                    jars.create(data=dst).to_hdf5('/data/raw/flame/proc/{}/{}/dst.hdf5'.format(suffix, sid))
+                    save_arr(arr=lbl, key='lbl', sid=sid, suffix=suffix, **kwargs)
+                    save_arr(arr=dst, key='dst', sid=sid, suffix=suffix, **kwargs)
+
+def save_arr(arr, key, sid, suffix, patch_size=None, **kwargs):
+
+    if patch_size is None:
+
+        jars.create(data=arr).to_hdf5('/data/raw/flame/proc/{}/{}/{}.hdf5'.format(suffix, sid, key))
+
+        return
+
+    if arr.ndim == 2:
+        arr = np.expand_dims(arr, axis=-1)
+
+    if arr.ndim == 3:
+        arr = np.expand_dims(arr, axis=0)
+
+    if arr.ndim == 4:
+        arr = np.expand_dims(arr, axis=0)
+
+    patches = extract_volume_patches(x=arr, ksizes=patch_size + (arr.shape[-1],), **kwargs).numpy()
+    patches = patches.reshape(*(-1,) + patches.shape[-4:])
+
+    for n, p in enumerate(patches):
+
+        jars.create(data=p).to_hdf5('/data/raw/flame/proc/{}/{}-{:03d}/{}.hdf5'.format(suffix, sid, n, key))
 
 def load_tif(path, shape=(1200, 1200), kernel_size=50, method='adapthist'):
 
@@ -296,7 +334,11 @@ def create_prd(pattern='../comp/sens/proc/raw/*/prd.hdf5', **kwargs):
 if __name__ == '__main__':
 
     # ============================================================================
-    # create_hdr(v='v02')
+    # create_hdr(v='v03')
+    # join_hdr(v='v03')
+    # ============================================================================
+    # create_hdr(v='v04', csv='./csvs/meta-256.csv')
+    # join_hdr(v='v04', csv='./csvs/meta-256.csv')
     # ============================================================================
     # create_raw(pattern='/data/raw/flame/zips/AccumulatedTrainSet/Raw/*.tif', skip_existing=False)
     # create_raw(pattern='/data/raw/flame/zips/DrChang/Test/TestRaw/*.tif', test=True)
@@ -304,6 +346,9 @@ if __name__ == '__main__':
     # create_v00(skip_existing=False)
     # create_v01(skip_existing=False)
     # create_v01(pattern='/data/raw/flame/zips/06-25/Raw/*.tif', suffix='v02', skip_existing=False)
+    # create_v01(pattern='/data/raw/flame/zips/TrainSetNew/Raw/*.tif', suffix='v03', skip_existing=False)
+    # create_v01(pattern='/data/raw/flame/zips/TrainSetNew/Raw/*.tif', suffix='v04', skip_existing=False, patch_size=(1, 256, 256))
+    # create_v01(pattern='/data/raw/flame/zips/TrainSetNew/Raw/*.tif', suffix='v05', skip_existing=False, patch_size=(1, 256, 256), method='adapthist')
     # ============================================================================
     # create_prd()
     # ============================================================================
