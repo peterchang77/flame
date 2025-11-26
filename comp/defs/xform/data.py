@@ -19,7 +19,8 @@ def create_hst(raw, **kwargs):
 def equalize(x, method='hist', kernel_size=50, **kwargs):
 
     if method == 'adapthist':
-        x = exposure.equalize_adapthist(x, kernel_size=kernel_size)
+        x = exposure.equalize_adapthist(x[0, ..., 0], kernel_size=kernel_size)
+        x = np.expand_dims(np.expand_dims(x, axis=0), axis=-1)
     else:
         x = exposure.equalize_hist(x)
 
@@ -27,7 +28,7 @@ def equalize(x, method='hist', kernel_size=50, **kwargs):
 
     return x
 
-def multi_window(x, epsilon=1e-6, steps=10, lower_clip=0, upper_clip=99.9, axis=-1):
+def multi_window(x, epsilon=1e-6, steps=10, lower_clip=0, upper_clip=99.9, axis=-1, **kwargs):
 
     x = np.squeeze(x)
 

@@ -14,6 +14,7 @@ sform:
 fdefs:
 - kwargs:
     raw: dat-raw
+    method: 'adapthist'
   python:
     file: '{root}/comp/defs/xform/data.py'
     name: create_hst 

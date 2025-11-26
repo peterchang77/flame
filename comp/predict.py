@@ -19,10 +19,10 @@ gpus.autoselect()
 # arr = jars.create('/data/raw/flame/proc/v03/{}/dat.hdf5'.format(sid))
 # hst = jars.create('/data/raw/flame/proc/v03/{}/hst.hdf5'.format(sid))
 # lbl = jars.create('/data/raw/flame/proc/v02/{}/lbl.hdf5'.format(sid))
-# raw = jars.create('/data/raw/flame/zips/06-25/Raw/{}.tif'.format(sid))
+# raw = jars.create('/data/raw/flame/zips/TrainSetNew/Raw/{}.tif'.format(sid))
 # ==================================================================
-# pipeline = JarvisPipeline(yml='./ymls/db-v04.yml')
-# outs = pipeline.run(arrs=arr, cols=['rpn-raw', 'fpr-raw'])
+# pipeline = JarvisPipeline(yml='./ymls/db-v05.yml')
+# outs = pipeline.run(arrs=raw, cols=['rpn-raw', 'fpr-raw'])
 # mask = outs['rpn-raw'].data > 0.5
 # mask[outs['fpr-raw'].data > 0.25] = 0
 # ==================================================================
